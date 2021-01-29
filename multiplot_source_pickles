@@ -1,0 +1,207 @@
+import pandas as pd
+import numpy as np
+from pylab import mpl, plt
+import matplotlib.dates as mdates
+plt.style.use('seaborn')
+mpl.rcParams['font.family']='serif'
+pd.plotting.register_matplotlib_converters()
+
+
+## --First plot source-- #
+contract = 'DCSc'
+name = 'Class III Milk'
+unit = '$/cwt'
+
+#contract = ['KCc','CLc','DCSc','NGc','NFc','FCPOc','AA5Gc']
+#name = ['Coffee','WTI','Class III','Nat Gas','NFDM','Palm Oil','Diesel']
+#unit = ['cents/lb','$/bbl','$/lb','$/mmbtu','$/lb','MYR/T','$/gal']
+
+m_start = '2011-01-01'
+m_end = '2020-12-31'
+
+riclist = ["{}{}".format(contract, i) for i in range(1,14,1)]
+
+df = pd.read_pickle(contract + '.pkl')
+
+df1 = df.T
+df1.drop(df1.index[0], axis=0, inplace=True)
+
+for c, col in enumerate(df1.columns):
+    df1[col] = df1[col].shift(c+1)
+    df1 = df1.append({'x':np.nan}, ignore_index=True)
+
+df1.index = pd.date_range(start=m_start, periods=len(df1), freq='MS')
+df1=pd.merge(df1,df['Spot'], \
+             how ='right', left_index=True, right_index=True)
+df1.drop('x', axis=1, inplace=True)
+
+df1 = df1[ ['Spot'] + [ col for col in df1.columns if col != 'S-1' ] ]
+
+
+## --Second plot source-- #
+contract2 = 'NGc'
+name2 = 'Henry Hub NG'
+unit2 = '$/mmbtu'
+
+m_start2 = '2011-01-01'
+
+riclist2 = ["{}{}".format(contract2, i) for i in range(1,14,1)]
+
+df2 = pd.read_pickle(contract2 + '.pkl')
+
+df3 = df2.T
+df3.drop(df3.index[0], axis=0, inplace=True)
+
+for c, col in enumerate(df3.columns):
+    df3[col] = df3[col].shift(c+1)
+    df3 = df3.append({'x':np.nan}, ignore_index=True)
+
+df3.index = pd.date_range(start=m_start2, periods=len(df3), freq='MS')
+df3=pd.merge(df3,df2['Spot'], \
+             how ='right', left_index=True, right_index=True)
+df3.drop('x', axis=1, inplace=True)
+
+df3 = df3[ ['Spot'] + [ col for col in df3.columns if col != 'S-1' ] ]
+print(df3)
+
+
+## --Third plot source-- #
+contract3 = 'NFc'
+name3 = 'Nonfat Dry Milk'
+unit3 = 'cents/lb'
+
+m_start3 = '2011-01-01'
+
+riclist3 = ["{}{}".format(contract3, i) for i in range(1,14,1)]
+
+df4 = pd.read_pickle(contract3 + '.pkl')
+
+df5 = df4.T
+df5.drop(df5.index[0], axis=0, inplace=True)
+
+for c, col in enumerate(df5.columns):
+    df5[col] = df5[col].shift(c+1)
+    df5 = df5.append({'x':np.nan}, ignore_index=True)
+
+df5.index = pd.date_range(start=m_start3, periods=len(df5), freq='MS')
+df5=pd.merge(df5,df4['Spot'], \
+             how ='right', left_index=True, right_index=True)
+df5.drop('x', axis=1, inplace=True)
+
+df5 = df5[ ['Spot'] + [ col for col in df5.columns if col != 'S-1' ] ]
+print(df5)
+
+## --Fourth plot source-- #
+contract4 = 'FCPOc'
+name4 = 'Palm Oil'
+unit4 = 'MYR/T'
+
+#contract = ['KCc','CLc','DCSc','NGc','NFc','FCPOc','AA5Gc']
+#name = ['Coffee','WTI','Class III','Nat Gas','NFDM','Palm Oil','Diesel']
+#unit = ['cents/lb','$/bbl','$/lb','$/mmbtu','$/lb','MYR/T','$/gal']
+
+m_start4 = '2011-01-01'
+
+riclist4 = ["{}{}".format(contract4, i) for i in range(1,14,1)]
+
+df6 = pd.read_pickle(contract4 + '.pkl')
+
+df7 = df6.T
+df7.drop(df7.index[0], axis=0, inplace=True)
+
+for c, col in enumerate(df7.columns):
+    df7[col] = df7[col].shift(c+1)
+    df7 = df7.append({'x':np.nan}, ignore_index=True)
+
+df7.index = pd.date_range(start=m_start4, periods=len(df7), freq='MS')
+df7=pd.merge(df7,df6['Spot'], \
+             how ='right', left_index=True, right_index=True)
+df7.drop('x', axis=1, inplace=True)
+
+df7 = df7[ ['Spot'] + [ col for col in df7.columns if col != 'S-1' ] ]
+
+
+## --Plot 1-- ##
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(18,12))
+fig.suptitle('12-Month Futures Curves vs. Spot', size=18)
+
+ax1.set_title(name, size=13)
+ax1.plot(x_compat=True)
+ax1.plot(df1.iloc[0:,1:], color='k', linewidth=1, marker='', alpha=0.3)
+ax1.plot(df1.iloc[0:,0], color='tab:blue', \
+        linewidth=2, marker='*', label="Spot")
+ax1.set_ylabel(unit, size=11)
+ax1.legend(loc="best")
+ax1.xaxis.set_minor_formatter(mdates.DateFormatter('%b'))
+ax1.xaxis.set_major_locator(mdates.YearLocator())
+ax1.xaxis.set_major_formatter(mdates.DateFormatter("\n%Y"))
+ax1.tick_params(axis='x', which='major', pad=0)
+ax1.tick_params(axis='x', which='minor')
+ax1.get_xticks(np.arange(1,1))
+ax1.grid(axis="x", color='k', alpha=.3, linewidth=.5, linestyle=":")
+ax1.grid(axis="y", color='k', alpha=.3, linewidth=.5, linestyle=":")
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45, ha="left")
+plt.setp(ax1.xaxis.get_minorticklabels(), rotation=0, ha="center")
+ax1.set_xlim(m_start,m_end)
+
+## --Plot 2-- ##
+ax2.set_title(name2, size=13)
+ax2.plot(x_compat=True)
+ax2.plot(df3.iloc[0:,1:], color='k', linewidth=1, marker='', alpha=0.3)
+ax2.plot(df3.iloc[0:,0], color='tab:blue', \
+        linewidth=2, marker='*', label="Spot")
+ax2.set_ylabel(unit2, size=11)
+ax2.legend(loc="best")
+ax2.xaxis.set_minor_formatter(mdates.DateFormatter('%b'))
+ax2.xaxis.set_major_locator(mdates.YearLocator())
+ax2.xaxis.set_major_formatter(mdates.DateFormatter("\n%Y"))
+ax2.tick_params(axis='x', which='major', pad=0)
+ax2.tick_params(axis='x', which='minor')
+ax2.get_xticks(np.arange(1,1))
+ax2.grid(axis="x", color='k', alpha=.3, linewidth=.5, linestyle=":")
+ax2.grid(axis="y", color='k', alpha=.3, linewidth=.5, linestyle=":")
+plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45, ha="left")
+plt.setp(ax2.xaxis.get_minorticklabels(), rotation=0, ha="center")
+ax2.set_xlim(m_start,m_end)
+
+## --Plot 3-- ##
+ax3.set_title(name3, size=13)
+ax3.plot(x_compat=True)
+ax3.plot(df5.iloc[0:,1:], color='k', linewidth=1, marker='', alpha=0.3)
+ax3.plot(df5.iloc[0:,0], color='tab:blue', \
+        linewidth=2, marker='*', label="Spot")
+ax3.set_ylabel(unit3, size=11)
+ax3.legend(loc="best")
+ax3.xaxis.set_minor_formatter(mdates.DateFormatter('%b'))
+ax3.xaxis.set_major_locator(mdates.YearLocator())
+ax3.xaxis.set_major_formatter(mdates.DateFormatter("\n%Y"))
+ax3.tick_params(axis='x', which='major', pad=0)
+ax3.tick_params(axis='x', which='minor')
+ax3.get_xticks(np.arange(1,1))
+ax3.grid(axis="x", color='k', alpha=.3, linewidth=.5, linestyle=":")
+ax3.grid(axis="y", color='k', alpha=.3, linewidth=.5, linestyle=":")
+plt.setp(ax3.xaxis.get_majorticklabels(), rotation=45, ha="left")
+plt.setp(ax3.xaxis.get_minorticklabels(), rotation=0, ha="center")
+ax3.set_xlim(m_start,m_end)
+
+## --Plot 4-- ##
+ax4.set_title(name4, size=13)
+ax4.plot(x_compat=True)
+ax4.plot(df7.iloc[0:,1:], color='k', linewidth=1, marker='', alpha=0.3)
+ax4.plot(df7.iloc[0:,0], color='tab:blue', \
+        linewidth=2, marker='*', label="Spot")
+ax4.set_ylabel(unit4, size=11)
+ax4.legend(loc="best")
+ax4.xaxis.set_minor_formatter(mdates.DateFormatter('%b'))
+ax4.xaxis.set_major_locator(mdates.YearLocator())
+ax4.xaxis.set_major_formatter(mdates.DateFormatter("\n%Y"))
+ax4.tick_params(axis='x', which='major', pad=0)
+ax4.tick_params(axis='x', which='minor')
+ax4.get_xticks(np.arange(1,1))
+ax4.grid(axis="x", color='k', alpha=.3, linewidth=.5, linestyle=":")
+ax4.grid(axis="y", color='k', alpha=.3, linewidth=.5, linestyle=":")
+plt.setp(ax4.xaxis.get_majorticklabels(), rotation=45, ha="left")
+plt.setp(ax4.xaxis.get_minorticklabels(), rotation=0, ha="center")
+ax4.set_xlim(m_start,m_end)
+
+fig.savefig('Futures vs Spot plot', dpi = 200)
