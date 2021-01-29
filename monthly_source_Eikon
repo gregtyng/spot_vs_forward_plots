@@ -1,0 +1,77 @@
+import eikon as ek
+ek.set_app_key('yourkey')
+import pandas as pd
+import openpyxl
+import numpy as np
+from pylab import mpl, plt
+import matplotlib.dates as mdates
+from datetime import datetime, timedelta
+plt.style.use('seaborn')
+mpl.rcParams['font.family']='serif'
+
+## --Instrument name, date range, get data-- ##
+contract = 'FCPOc'
+m_start = '2020-01-01'
+m_end = '2021-01-27'
+
+riclist = ["{}{}".format(contract, i) for i in range(1,14,1)]
+print(riclist)
+
+df = ek.get_timeseries(riclist,'close',
+start_date=m_start,
+end_date=m_end, interval='monthly')
+
+df.columns = ['Spot','S-1','S-2','S-3','S-4','S-5',\
+              'S-6','S-7','S-8','S-9','S-10','S-11','S-12']
+
+df=pd.DataFrame(df.resample('MS').mean())
+
+print(df)
+
+## --Transpose and lag futures-- ##
+df1 = df.T
+df1.drop(df1.index[0], axis=0, inplace=True)
+
+for c, col in enumerate(df1.columns):
+    df1[col] = df1[col].shift(c+1)
+    df1 = df1.append({'x':np.nan}, ignore_index=True)
+
+df1.index = pd.date_range(start=m_start, periods=len(df1), freq='MS')
+df1=pd.merge(df1,df['Spot'], \
+             how ='right', left_index=True, right_index=True)
+df1.drop('x', axis=1, inplace=True)
+
+df1 = df1[ ['Spot'] + [ col for col in df1.columns if col != 'S-1' ] ]
+print(df1)
+
+
+## --Plot using OO method-- ##
+fig, ax = plt.subplots(figsize=(15,10))
+plt.title('Palm Oil: Daily Forward Curves vs. Spot', size=20)
+
+ax.plot(x_compat=True)
+ax.plot(df1.iloc[0:,1:], color='k', linewidth=1, marker='', alpha=0.3)
+ax.plot(df1.iloc[0:,0], color='tab:blue', \
+        linewidth=2, marker='*', label="Spot")
+ax.set_xlabel('date', size=14)
+ax.set_ylabel('MYR/T', size=14)
+ax.legend(loc="best")
+ax.xaxis.set_major_locator(mdates.YearLocator())
+ax.xaxis.set_minor_locator(mdates.MonthLocator())
+ax.xaxis.set_major_formatter(mdates.DateFormatter("\n%Y"))
+ax.xaxis.set_minor_formatter(mdates.DateFormatter("%b"))
+ax.tick_params(axis='x', which='major', pad=20)
+ax.grid(axis="x", color='k', alpha=.3, linewidth=.5, linestyle=":")
+ax.grid(axis="y", color='k', alpha=.3, linewidth=.5, linestyle=":")
+plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha="center")
+plt.setp(ax.xaxis.get_minorticklabels(), rotation=90, ha="center")
+plt.xlim(m_start,m_end) 
+
+
+## --Save plot-- ##
+fig.savefig("name.png", dpi = 200, bbox_inches='tight')
+
+#Output to XLSX
+writer = pd.ExcelWriter('name.xlsx')
+df1.to_excel(writer,'data')
+writer.save()
